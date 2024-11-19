@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Player</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 20px;
+      }
+      video {
+        width: 80%;
+        height: auto;
+        margin: 20px 0;
+      }
+      video:fullscreen {
+        border: none; /* Remove border in fullscreen mode */
+      }
+      video:focus {
+        outline: none;
+        border: none; /* Remove border when video is focused */
+      }
+      button,
+      select,
+      input {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <form
+      method="POST"
+      action="/"
+      style="display: inline-block; margin-bottom: 20px"
+    >
+      <input
+        type="text"
+        name="folder_path"
+        placeholder="Enter folder path"
+        style="width: 300px"
+      />
+      <button type="submit">Change Folder</button>
+    </form>
+
+    <br />
+    <strong>Current Folder:</strong> {{ current_folder }}
+
+    <!-- Dropdown for video navigation -->
+    <select id="videoDropdown" onchange="selectVideo()">
+      <option value="">Select a video...</option>
+      {% for video in videos %}
+      <option value="{{ video }}">{{ video }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Video player -->
+    <video id="videoPlayer" controls>
+      <source id="videoSource" src="" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+
+    <br />
+    <button onclick="playPrevious()">Previous</button>
+    <button onclick="playNext()">Next</button>
+
+    <script>
+      const videos = {{ videos|tojson }};
+      let currentIndex = 0;
+
+      // Function to select and load the selected video
+      function selectVideo() {
+        const dropdown = document.getElementById("videoDropdown");
+        const selectedVideo = dropdown.value;
+        if (selectedVideo) {
+          currentIndex = videos.indexOf(selectedVideo);
+          loadVideo(currentIndex);
+        }
+      }
+
+      // Function to load a video by index
+      function loadVideo(index) {
+        const videoPlayer = document.getElementById("videoPlayer");
+        const videoSource = document.getElementById("videoSource");
+        videoSource.src = `/video/${videos[index]}`;
+        videoPlayer.load();
+        videoPlayer.play();
+        document.getElementById("videoDropdown").value = videos[index];
+      }
+
+      // Function to play the next video
+      function playNext() {
+        currentIndex = (currentIndex + 1) % videos.length;
+        loadVideo(currentIndex);
+      }
+
+      // Function to play the previous video
+      function playPrevious() {
+        currentIndex = (currentIndex - 1 + videos.length) % videos.length;
+        loadVideo(currentIndex);
+      }
+
+      // Function to toggle fullscreen mode and focus on video
+      function toggleFullScreen() {
+        const videoPlayer = document.getElementById("videoPlayer");
+        if (!document.fullscreenElement) {
+          videoPlayer.requestFullscreen().then(() => {
+            videoPlayer.focus(); // Focus the video after entering fullscreen
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      // Add event listeners for key controls
+      document.addEventListener("keydown", (event) => {
+        const videoPlayer = document.getElementById("videoPlayer");
+        switch (event.key) {
+          case "x": // Move forward by 10 seconds
+            videoPlayer.currentTime += 10;
+            break;
+          case "z": // Move backward by 10 seconds
+            videoPlayer.currentTime -= 10;
+            break;
+          case "n": // Move forward by 60 seconds
+            videoPlayer.currentTime += 60;
+            break;
+          case "b": // Move backward by 60 seconds
+            videoPlayer.currentTime -= 60;
+            break;
+          case "]": // Play the next video
+            playNext();
+            break;
+          case "[": // Play the previous video
+            playPrevious();
+            break;
+          case "f": // Toggle fullscreen
+            toggleFullScreen();
+            break;
+        }
+      });
+
+      // Load the first video if available
+      if (videos.length > 0) {
+        loadVideo(currentIndex);
+      }
+    </script>
+  </body>
+</html>
